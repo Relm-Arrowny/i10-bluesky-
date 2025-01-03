@@ -25,20 +25,21 @@ class PeakPosition(tuple, Enum):
 def scan_and_move_cen(funcs) -> Callable:
     def inner(**kwargs):
         ps = PeakStats(
-            f"{kwargs['motor'].name}",
-            f"{kwargs['det'].name}",
+            f"{kwargs['motor'].name}{kwargs['motor_name']}",
+            f"{kwargs['det'].name}{kwargs['det_name']}",
             calc_derivative_and_stats=True,
         )
         yield from bpp.subs_wrapper(
             funcs(**kwargs),
             ps,
         )
-        print(ps)
+
         peak_position = get_stat_loc(ps, kwargs["loc"])
         if (
             kwargs["start"] >= peak_position >= kwargs["end"]
             or kwargs["start"] <= peak_position <= kwargs["end"]
         ):
+            print(peak_position)
             yield from abs_set(kwargs["motor"], peak_position, wait=True)
         else:
             raise ValueError(f"New position ({peak_position}) is outside scan range.")
@@ -53,6 +54,8 @@ def step_scan_and_move_cen(
     start: float,
     end: float,
     num: int,
+    motor_name: str = "-user_readback",
+    det_name: str = "-value",
     loc: PeakPosition = PeakPosition.CEN,
 ) -> MsgGenerator:
     return scan([det], motor, start, end, num=num)
@@ -64,6 +67,8 @@ def fast_scan_and_move_cen(
     motor: Motor,
     start: float,
     end: float,
+    motor_name: str = "-user_readback",
+    det_name: str = "-value",
     motor_speed: float | None = None,
     loc: PeakPosition = PeakPosition.CEN,
 ) -> MsgGenerator:
@@ -72,5 +77,7 @@ def fast_scan_and_move_cen(
 
 def get_stat_loc(ps: PeakStats, loc: PeakPosition) -> float:
     stat = getattr(ps, loc.value[0])
+    if not stat:
+        raise ValueError("Fitting failed, check devices name are correct.")
     stat_pos = getattr(stat, loc.value[1])
     return stat_pos if isinstance(stat_pos, float) else stat_pos[0]

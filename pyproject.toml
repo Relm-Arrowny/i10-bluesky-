@@ -99,6 +99,10 @@ filterwarnings = "error"
 # Doctest python code in docs, python code in src docstrings, test functions in tests
 testpaths = "docs src tests"
 
+
+asyncio_mode = "auto"
+
+
 [tool.coverage.run]
 data_file = "/tmp/i10_bluesky.coverage"
 
