@@ -10,6 +10,8 @@ from ophyd_async.core import StandardReadable
 from ophyd_async.epics.motor import Motor
 from p99_bluesky.plans.fast_scan import fast_scan_1d
 
+from i10_bluesky.log import LOGGER
+
 
 class PeakPosition(tuple, Enum):
     COM = ("stats", "com")
@@ -33,16 +35,10 @@ def scan_and_move_cen(funcs) -> Callable:
             funcs(**kwargs),
             ps,
         )
-
         peak_position = get_stat_loc(ps, kwargs["loc"])
-        if (
-            kwargs["start"] >= peak_position >= kwargs["end"]
-            or kwargs["start"] <= peak_position <= kwargs["end"]
-        ):
-            print(peak_position)
-            yield from abs_set(kwargs["motor"], peak_position, wait=True)
-        else:
-            raise ValueError(f"New position ({peak_position}) is outside scan range.")
+
+        LOGGER.info(f"Fit info {ps}")
+        yield from abs_set(kwargs["motor"], peak_position, wait=True)
 
     return inner
 
@@ -79,5 +75,8 @@ def get_stat_loc(ps: PeakStats, loc: PeakPosition) -> float:
     stat = getattr(ps, loc.value[0])
     if not stat:
         raise ValueError("Fitting failed, check devices name are correct.")
+    elif not stat.fwhm:
+        raise ValueError("Fitting failed, no peak within scan range.")
+
     stat_pos = getattr(stat, loc.value[1])
     return stat_pos if isinstance(stat_pos, float) else stat_pos[0]
