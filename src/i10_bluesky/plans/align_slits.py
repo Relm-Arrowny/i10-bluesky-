@@ -28,12 +28,12 @@ def align_s5s6(
     yield from mv(s_stage.y, -3, group=group_wait)  # type: ignore
     yield from wait(group=group_wait)
 
-    align_slit(
+    yield from align_slit(
         det=det,
         slit=slit.s5,
         x_scan_size=0.1,
         x_final_size=0.65,
-        x_range=2,
+        x_range=0.2,
         x_open_size=2,
         x_cen=0,
         y_scan_size=0.1,
@@ -59,13 +59,9 @@ def align_slit(
     y_range: float,
     y_cen: float,
     det_name: str | None = None,
-    motor_name: str | None = None,
+    motor_name: str | None = "",
     centre_type: PeakPosition = PeakPosition.COM,
 ):
-    if det_name is None:
-        det_name = "-value"
-    if motor_name is None:
-        motor_name = "-user_readback"
     group_wait = "slits group"
     yield from mv(slit.x_gap, x_scan_size, slit.y_gap, y_open_size, group=group_wait)  # type: ignore
     yield from mv(slit.y_centre, y_cen, group=group_wait)  # type: ignore
