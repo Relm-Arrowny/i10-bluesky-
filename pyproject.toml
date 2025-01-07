@@ -16,7 +16,7 @@ dependencies = [
     #Things that are neeeded for running
     "blueapi",
     "ophyd",
-    "dls-dodal",
+    "dls-dodal@git+https://github.com/DiamondLightSource/dodal.git@949-make-ophyd-devices-for-the-diagonstics-for-i10",
     "ophyd-async",
     "bluesky",
     "p99_bluesky",

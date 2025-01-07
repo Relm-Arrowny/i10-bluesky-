@@ -1,5 +1,6 @@
 from collections.abc import Callable
 from enum import Enum
+from typing import TypeVar, cast
 
 from bluesky import preprocessors as bpp
 from bluesky.callbacks.fitting import PeakStats
@@ -24,8 +25,17 @@ class PeakPosition(tuple, Enum):
     D_MAX = ("derivative_stats", "max")
 
 
-def scan_and_move_cen(funcs) -> Callable:
+TCallable = TypeVar("TCallable", bound=Callable)
+
+
+def scan_and_move_cen(funcs: TCallable) -> TCallable:
     def inner(**kwargs):
+        if "motor_name" not in kwargs or kwargs["motor_name"] is None:
+            kwargs["motor_name"] = "-user_readback"
+        if "det_name" not in kwargs or kwargs["det_name"] is None:
+            kwargs["det_name"] = "-value"
+        if "loc" not in kwargs or kwargs["loc"] is None:
+            kwargs["loc"] = PeakPosition.CEN
         ps = PeakStats(
             f"{kwargs['motor'].name}{kwargs['motor_name']}",
             f"{kwargs['det'].name}{kwargs['det_name']}",
@@ -40,7 +50,7 @@ def scan_and_move_cen(funcs) -> Callable:
         LOGGER.info(f"Fit info {ps}")
         yield from abs_set(kwargs["motor"], peak_position, wait=True)
 
-    return inner
+    return cast(TCallable, inner)
 
 
 @scan_and_move_cen
@@ -51,9 +61,12 @@ def step_scan_and_move_cen(
     end: float,
     num: int,
     motor_name: str = "-user_readback",
-    det_name: str = "-value",
+    det_name: str = "-user_readback",
     loc: PeakPosition = PeakPosition.CEN,
 ) -> MsgGenerator:
+    LOGGER.info(
+        f"Step scaning {motor}{motor_name} with {det}{det_name} pro-scan move to {loc}"
+    )
     return scan([det], motor, start, end, num=num)
 
 
@@ -63,11 +76,14 @@ def fast_scan_and_move_cen(
     motor: Motor,
     start: float,
     end: float,
-    motor_name: str = "-user_readback",
-    det_name: str = "-value",
+    motor_name: str,
+    det_name: str,
+    loc: PeakPosition,
     motor_speed: float | None = None,
-    loc: PeakPosition = PeakPosition.CEN,
 ) -> MsgGenerator:
+    LOGGER.info(
+        f"Fast scaning {motor}{motor_name} with {det}{det_name} pro-scan move to {loc}"
+    )
     return fast_scan_1d([det], motor, start, end, motor_speed=motor_speed)
 
 

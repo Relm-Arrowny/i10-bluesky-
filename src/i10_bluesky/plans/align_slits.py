@@ -1,41 +1,105 @@
-# from enum import Enum
+import math
 
-# from bluesky import preprocessors as bpp
-# from bluesky.callbacks.fitting import PeakStats
-# from bluesky.plan_stubs import abs_set
-# from bluesky.plans import scan
-# from dodal.common.types import MsgGenerator
-# from dodal.devices.i10.slits import I10Slits
-# from ophyd_async.core import StandardReadable
-# from ophyd_async.epics.motor import Motor
+from bluesky.plan_stubs import mv, wait
+from dodal.beamlines.i10 import (
+    diffractometer,
+    rasor_femto_pa_scaler_det,
+    simple_stage,
+    slits,
+)
+from dodal.common.types import MsgGenerator
+from dodal.devices.slits import Slits
+from ophyd_async.core import StandardReadable
 
-
-# class PeakPosition(int, Enum):
-#     COM = 2
-#     CEN = 3
-
-
-# def scan_and_move(
-#     det: StandardReadable,
-#     motor: Motor,
-#     start: float,
-#     end: float,
-#     num: int,
-#     loc: PeakPosition = PeakPosition.CEN,
-# ) -> MsgGenerator:
-#     ps = yield from find_peak_centre(
-#         motor=motor, det=det, start=start, end=end, num=num
-#     )
-#     yield from abs_set(motor, ps["stats"][loc], wait=True)
+from i10_bluesky.plans.utils import PeakPosition, step_scan_and_move_cen
 
 
-# def find_peak_centre(
-#     det: StandardReadable, motor: Motor, start: float, end: float, num: int
-# ) -> MsgGenerator:
-#     ps = PeakStats(f"{motor.name}", f"{det.name}")
+def align_s5s6(
+    det: StandardReadable | None = None, det_name: str | None = None
+) -> MsgGenerator:
+    if det is None:
+        det = rasor_femto_pa_scaler_det()
+        det_name = "-current"
+    diff = diffractometer()
+    s_stage = simple_stage()
+    slit = slits()
+    group_wait = "diff group A"
+    yield from mv(diff.tth, 0, diff.th, 0, group=group_wait)  # type: ignore  # See: https://github.com/bluesky/bluesky/issues/1809
+    yield from mv(s_stage.y, -3, group=group_wait)  # type: ignore
+    yield from wait(group=group_wait)
 
-#     yield from bpp.subs_wrapper(
-#         scan([det], motor, start, end, num=num),
-#         ps,
-#     )
-#     return ps
+    align_slit(
+        det=det,
+        slit=slit.s5,
+        x_scan_size=0.1,
+        x_final_size=0.65,
+        x_range=2,
+        x_open_size=2,
+        x_cen=0,
+        y_scan_size=0.1,
+        y_final_size=1.3,
+        y_open_size=2,
+        y_range=2,
+        y_cen=0,
+        det_name=det_name,
+    )
+
+
+def align_slit(
+    det: StandardReadable,
+    slit: Slits,
+    x_scan_size: float,
+    x_final_size: float,
+    x_open_size: float,
+    y_scan_size: float,
+    y_final_size: float,
+    y_open_size: float,
+    x_range: float,
+    x_cen: float,
+    y_range: float,
+    y_cen: float,
+    det_name: str | None = None,
+    motor_name: str | None = None,
+    centre_type: PeakPosition = PeakPosition.COM,
+):
+    if det_name is None:
+        det_name = "-value"
+    if motor_name is None:
+        motor_name = "-user_readback"
+    group_wait = "slits group"
+    yield from mv(slit.x_gap, x_scan_size, slit.y_gap, y_open_size, group=group_wait)  # type: ignore
+    yield from mv(slit.y_centre, y_cen, group=group_wait)  # type: ignore
+    start_pos, end_pos, num = slit_cal_range_num(x_cen, x_range, x_scan_size)
+    yield from wait(group=group_wait)
+    yield from step_scan_and_move_cen(
+        det=det,
+        motor=slit.x_centre,
+        start=start_pos,
+        end=end_pos,
+        num=num,
+        det_name=det_name,
+        motor_name=motor_name,
+        loc=centre_type,
+    )
+
+    yield from mv(slit.y_gap, y_scan_size, slit.x_gap, x_open_size, group=group_wait)  # type: ignore
+    start_pos, end_pos, num = slit_cal_range_num(y_cen, y_range, y_scan_size)
+    yield from wait(group=group_wait)
+    yield from step_scan_and_move_cen(
+        det=det,
+        motor=slit.y_centre,
+        start=start_pos,
+        end=end_pos,
+        num=num,
+        det_name=det_name,
+        loc=centre_type,
+    )
+
+    yield from mv(slit.x_gap, x_final_size, slit.y_gap, y_final_size)  # type: ignore
+
+
+def slit_cal_range_num(cen, range, size) -> tuple[float, float, int]:
+    start_pos = cen - range
+    end_pos = cen + range
+    num = math.ceil(range * 4 / size)
+    return start_pos, end_pos, num
