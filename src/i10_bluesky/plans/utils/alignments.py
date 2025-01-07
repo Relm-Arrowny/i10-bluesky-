@@ -30,6 +30,7 @@ TCallable = TypeVar("TCallable", bound=Callable)
 
 def scan_and_move_cen(funcs: TCallable) -> TCallable:
     def inner(**kwargs):
+        # Add default value if they are None or missing.
         if "motor_name" not in kwargs or kwargs["motor_name"] is None:
             kwargs["motor_name"] = "-user_readback"
         if "det_name" not in kwargs or kwargs["det_name"] is None:
@@ -60,9 +61,9 @@ def step_scan_and_move_cen(
     start: float,
     end: float,
     num: int,
-    motor_name: str = "-user_readback",
-    det_name: str = "-user_readback",
-    loc: PeakPosition = PeakPosition.CEN,
+    motor_name: str | None = None,
+    det_name: str | None = None,
+    loc: PeakPosition | None = None,
 ) -> MsgGenerator:
     LOGGER.info(
         f"Step scaning {motor}{motor_name} with {det}{det_name} pro-scan move to {loc}"
@@ -77,8 +78,8 @@ def fast_scan_and_move_cen(
     start: float,
     end: float,
     motor_name: str,
-    det_name: str,
-    loc: PeakPosition,
+    det_name: str | None = None,
+    loc: PeakPosition | None = None,
     motor_speed: float | None = None,
 ) -> MsgGenerator:
     LOGGER.info(

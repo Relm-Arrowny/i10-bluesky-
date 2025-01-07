@@ -166,7 +166,6 @@ async def test_scan_and_move_cen_fail_to_with_wrong_name(
                 end=5,
                 motor_speed=100,
                 motor_name="wrong_name",
-                det_name="-value",
                 loc=PeakPosition.CEN,
             ),
             capture_emitted,
