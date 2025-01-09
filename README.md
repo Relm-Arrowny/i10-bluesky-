@@ -7,7 +7,7 @@
 
 i10 bluesky project
 
-This module contain all bluesky plans for beamline i10. 
+This module contains bluesky plans for beamline i10. 
 
 Source          | <https://github.com/DiamondLightSource/i10-bluesky>
 :---:           | :---:
