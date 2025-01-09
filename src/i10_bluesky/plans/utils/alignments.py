@@ -15,6 +15,15 @@ from i10_bluesky.log import LOGGER
 
 
 class PeakPosition(tuple, Enum):
+    """
+    Data table to access the fit data.
+    Com: Centre of mass
+    CEN: Peak position
+    MIN: Minimum value
+    MAX: Maximum vale
+    D_: Differential
+    """
+
     COM = ("stats", "com")
     CEN = ("stats", "cen")
     MIN = ("stats", "min")
@@ -29,6 +38,9 @@ TCallable = TypeVar("TCallable", bound=Callable)
 
 
 def scan_and_move_cen(funcs: TCallable) -> TCallable:
+    """Wrapper to added PeakStats call back before performing scan.
+    and move to the fitted position"""
+
     def inner(**kwargs):
         # Add default value if they are None or missing.
         if "motor_name" not in kwargs or kwargs["motor_name"] is None:
@@ -65,6 +77,7 @@ def step_scan_and_move_cen(
     det_name: str | None = None,
     loc: PeakPosition | None = None,
 ) -> MsgGenerator:
+    """Does a step scan and move to the fitted position"""
     LOGGER.info(
         f"Step scaning {motor}{motor_name} with {det}{det_name} pro-scan move to {loc}"
     )
@@ -82,6 +95,7 @@ def fast_scan_and_move_cen(
     loc: PeakPosition | None = None,
     motor_speed: float | None = None,
 ) -> MsgGenerator:
+    """Does a fast non-stopping scan and move to the fitted position"""
     LOGGER.info(
         f"Fast scaning {motor}{motor_name} with {det}{det_name} pro-scan move to {loc}"
     )
@@ -89,6 +103,8 @@ def fast_scan_and_move_cen(
 
 
 def get_stat_loc(ps: PeakStats, loc: PeakPosition) -> float:
+    """Helper to get check the fit was done correctly and
+    return the position to got to."""
     stat = getattr(ps, loc.value[0])
     if not stat:
         raise ValueError("Fitting failed, check devices name are correct.")

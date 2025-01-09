@@ -17,6 +17,19 @@ from i10_bluesky.plans.utils import PeakPosition, step_scan_and_move_cen
 def align_s5s6(
     det: StandardReadable | None = None, det_name: str | None = None
 ) -> MsgGenerator:
+    """
+    Plan to align the s5s6 slits to the straight through beam
+    and RASOR detector, it define where all the motor should be and call
+    align slits
+
+    Parameters
+    ----------
+    det: (Optional)
+        Detector that use for the alignments, default is rasor photodiode.
+    det_name: (Optional)
+        Name of the detector for fitting only requires.
+    """
+
     if det is None:
         det = rasor_femto_pa_scaler_det()
         det_name = "-current"
@@ -63,6 +76,47 @@ def align_slit(
     motor_name: str | None = "",
     centre_type: PeakPosition = PeakPosition.COM,
 ):
+    """
+    Plan to align a pair of standard x-y slits,
+    it does a pair of slits scan and go to the centre of mass by default.
+
+    Parameters
+    ----------
+    det: StandardReadable
+        Detector to be use for alignment.
+    slit: Slits,
+        x-y slits.
+    x_scan_size: float,
+        The size of the x slit use for alignment.
+    x_final_size: float,
+        The size of the x slit to set to after alignment.
+    x_open_size: float,
+        The size of the x slit during y slit alignment.
+    y_scan_size: float,
+        The size of the y slit use for alignment.
+    y_final_size: float,
+        The size of the y slit to set to after alignment.
+    y_open_size: float,
+        The size of the y slit during x slit alignment.
+    x_range: float,
+        The x slit range, range is the distant from the centre.
+        e.g. a range of 1 with centre at 0 will cover -1 to 1.
+    x_cen: float,
+        The best guess of x slit centre.
+    y_range: float,
+        The y slit range.
+    y_cen: float,
+        The best guess of y slit centre.
+    det_name: str | None = None,
+        det_name is optional, it is used for indicate which signal to fit
+        when there are multiple HINTED_SIGNAL/non standard name.
+        It only add to the last part of the detector name if/when required.
+    motor_name: str | None = "",
+        The name of the motor, same as det_name.
+    centre_type: PeakPosition = PeakPosition.COM
+        Where to move the slits, it goes to centre of mass by default.
+        see PeakPosition for other options.
+    """
     group_wait = "slits group"
     yield from abs_set(slit.x_gap, x_scan_size, group=group_wait)
     yield from abs_set(slit.y_gap, y_open_size, group=group_wait)
@@ -99,6 +153,7 @@ def align_slit(
 
 
 def slit_cal_range_num(cen, range, size) -> tuple[float, float, int]:
+    """Calculate the start, end and number of step for the scan"""
     start_pos = cen - range
     end_pos = cen + range
     num = math.ceil(abs(range * 4.0 / size))
