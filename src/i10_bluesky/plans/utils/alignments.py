@@ -16,11 +16,11 @@ from i10_bluesky.log import LOGGER
 
 class PeakPosition(tuple, Enum):
     """
-    Data table to access the fit data.
+    Data table to help access the fit data.
     Com: Centre of mass
     CEN: Peak position
     MIN: Minimum value
-    MAX: Maximum vale
+    MAX: Maximum value
     D_: Differential
     """
 
@@ -38,8 +38,8 @@ TCallable = TypeVar("TCallable", bound=Callable)
 
 
 def scan_and_move_cen(funcs: TCallable) -> TCallable:
-    """Wrapper to added PeakStats call back before performing scan.
-    and move to the fitted position"""
+    """Wrapper to added PeakStats call back before performing scan
+    and move to the fitted position after scan"""
 
     def inner(**kwargs):
         # Add default value if they are None or missing.
@@ -103,8 +103,8 @@ def fast_scan_and_move_cen(
 
 
 def get_stat_loc(ps: PeakStats, loc: PeakPosition) -> float:
-    """Helper to get check the fit was done correctly and
-    return the position to got to."""
+    """Helper to check the fit was done correctly and
+    return requested stats position (peak position)."""
     stat = getattr(ps, loc.value[0])
     if not stat:
         raise ValueError("Fitting failed, check devices name are correct.")
