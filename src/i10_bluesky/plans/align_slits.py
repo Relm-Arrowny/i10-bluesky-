@@ -11,6 +11,7 @@ from dodal.common.types import MsgGenerator
 from dodal.devices.slits import Slits
 from ophyd_async.core import StandardReadable
 
+from i10_bluesky.log import LOGGER
 from i10_bluesky.plans.utils import PeakPosition, step_scan_and_move_cen
 
 
@@ -37,22 +38,39 @@ def align_s5s6(
     s_stage = simple_stage()
     slit = slits()
     group_wait = "diff group A"
+    LOGGER.info("Moving to straight through and dropping sample")
     yield from abs_set(diff.tth, 0, group=group_wait)
     yield from abs_set(diff.th, 0, group=group_wait)  # type: ignore  # See: https://github.com/bluesky/bluesky/issues/1809
     yield from abs_set(s_stage.y, -3, group=group_wait)  # type: ignore
     yield from wait(group=group_wait)
-
+    LOGGER.info("Aligning s5")
     yield from align_slit(
         det=det,
         slit=slit.s5,
         x_scan_size=0.1,
         x_final_size=0.65,
-        x_range=0.2,
-        x_open_size=2,
+        x_range=2,
+        x_open_size=4,
         x_cen=0,
         y_scan_size=0.1,
         y_final_size=1.3,
-        y_open_size=2,
+        y_open_size=4,
+        y_range=2,
+        y_cen=0,
+        det_name=det_name,
+    )
+    LOGGER.info("Aligning s6")
+    yield from align_slit(
+        det=det,
+        slit=slit.s6,
+        x_scan_size=0.1,
+        x_final_size=0.45,
+        x_range=2,
+        x_open_size=4,
+        x_cen=0,
+        y_scan_size=0.1,
+        y_final_size=0.6,
+        y_open_size=4,
         y_range=2,
         y_cen=0,
         det_name=det_name,
@@ -120,9 +138,11 @@ def align_slit(
     group_wait = "slits group"
     yield from abs_set(slit.x_gap, x_scan_size, group=group_wait)
     yield from abs_set(slit.y_gap, y_open_size, group=group_wait)
+    LOGGER.info(f"Moving to starting position for {slit.x_centre.name} alignment.")
     yield from wait(group=group_wait)
     yield from mv(slit.y_centre, y_cen, group=group_wait)  # type: ignore
     start_pos, end_pos, num = slit_cal_range_num(x_cen, x_range, x_scan_size)
+
     yield from step_scan_and_move_cen(
         det=det,
         motor=slit.x_centre,
@@ -136,8 +156,10 @@ def align_slit(
 
     yield from abs_set(slit.y_gap, y_scan_size, group=group_wait)
     yield from abs_set(slit.x_gap, x_open_size, group=group_wait)
+    LOGGER.info(f"Moving to starting position for {slit.y_centre.name} alignment.")
     yield from wait(group=group_wait)
     start_pos, end_pos, num = slit_cal_range_num(y_cen, y_range, y_scan_size)
+
     yield from step_scan_and_move_cen(
         det=det,
         motor=slit.y_centre,

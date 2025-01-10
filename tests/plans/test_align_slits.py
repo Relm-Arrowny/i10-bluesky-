@@ -50,7 +50,7 @@ def test_slit_cal_range_num(test_input, expected_output):
 def test_align_s5s6(mock_align_slit: MagicMock):
     sim = RunEngineSimulator()
     msgs = sim.simulate_plan(align_s5s6())
-    mock_align_slit.assert_called_once()
+    assert mock_align_slit.call_count == 2
     msgs = check_msg_set(msgs=msgs, obj=diffractometer().tth, value=0)
     msgs = check_msg_set(msgs=msgs, obj=diffractometer().th, value=0)
     msgs = check_msg_set(msgs=msgs, obj=simple_stage().y, value=-3)
