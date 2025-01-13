@@ -1,7 +1,6 @@
-import math
 from collections.abc import Hashable
 
-from bluesky.plan_stubs import abs_set, locate, mv, wait
+from bluesky.plan_stubs import abs_set, mv, wait
 from dodal.beamlines.i10 import (
     det_slits,
     diffractometer,
@@ -12,9 +11,14 @@ from dodal.beamlines.i10 import (
 from dodal.common.types import MsgGenerator
 from dodal.devices.slits import Slits
 from ophyd_async.core import StandardReadable
-from ophyd_async.epics.motor import Motor
 
-from i10_bluesky.plans.utils import PeakPosition, step_scan_and_move_cen
+from i10_bluesky.plans.utils import (
+    PeakPosition,
+    align_motor_with_look_up,
+    cal_range_num,
+    move_motor_with_look_up,
+    step_scan_and_move_cen,
+)
 
 """I10 has fix/solid slit on a motor, this store the rough opening
  position against slit size in um"""
@@ -32,11 +36,11 @@ def move_dsu(
     use_motor_position: bool = False,
     wait=True,
     group: Hashable | None = None,
-):
-    yield from move_solid_slit(
+) -> MsgGenerator:
+    yield from move_motor_with_look_up(
         slit=det_slits().upstream,
         size=size,
-        slit_table=slit_table,
+        motor_table=slit_table,
         use_motor_position=use_motor_position,
         wait=wait,
         group=group,
@@ -49,92 +53,44 @@ def move_dsd(
     use_motor_position: bool = False,
     wait=True,
     group: Hashable | None = None,
-):
-    yield from move_solid_slit(
+) -> MsgGenerator:
+    yield from move_motor_with_look_up(
         slit=det_slits().downstream,
         size=size,
-        slit_table=slit_table,
+        motor_table=slit_table,
         use_motor_position=use_motor_position,
         wait=wait,
         group=group,
     )
 
 
-def move_solid_slit(
-    slit: Motor,
-    size: float,
-    slit_table: dict[str, float],
-    use_motor_position: bool = False,
-    wait=True,
-    group: Hashable | None = None,
-) -> MsgGenerator:
-    if use_motor_position:
-        yield from abs_set(slit, size, wait=wait, group=group)  # type: ignore
-    elif str(size) in slit_table:
-        yield from abs_set(slit, slit_table[str(size)], wait=wait, group=group)  # type: ignore
-    else:
-        raise ValueError(
-            f"No slit with size={size}um. Available slit size: {slit_table}"
-        )
-
-
-def align_solid_slit(
-    slit: Motor,
-    size: float,
-    slit_table: dict[str, float],
-    det: StandardReadable,
-    det_name: str = "",
-    motor_name: str = "",
-    use_motor_position: bool = False,
-    wait=True,
-    group: Hashable | None = None,
-    centre_type: PeakPosition = PeakPosition.COM,
-):
-    start_pos, end_pos, num = slit_cal_range_num(
-        cen=slit_table[str(size)], range=size * 3, size=size / 5.0
-    )
-    yield from step_scan_and_move_cen(
-        det=det,
-        motor=slit,
-        start=start_pos,
-        end=end_pos,
-        num=num,
-        det_name=det_name,
-        motor_name=motor_name,
-        loc=centre_type,
-    )
-    slit_table[str(size)] = yield from locate(slit)["readback"]
-
-
-def align_dsu(size, det=None, det_name: str = ""):
+def align_dsu(size, det=None, det_name: str = "") -> MsgGenerator:
     if det is None:
         det, det_name = get_rasor_default_det()
-    yield from align_solid_slit(
+    yield from align_motor_with_look_up(
         slit=det_slits().upstream,
         size=size,
         slit_table=DSU,
         det=det,
         det_name=det_name,
-        group=None,
         centre_type=PeakPosition.COM,
     )
 
 
-def align_dsd(size, det=None, det_name: str = ""):
+def align_dsd(size, det=None, det_name: str = "") -> MsgGenerator:
     if det is None:
         det, det_name = get_rasor_default_det()
-    yield from align_solid_slit(
+    yield from align_motor_with_look_up(
         slit=det_slits().downstream,
         size=size,
         slit_table=DSD,
         det=det,
         det_name=det_name,
-        group=None,
         centre_type=PeakPosition.COM,
     )
 
 
-def align_pa_slit(dsd_size, dsu_size):
+def align_pa_slit(dsd_size, dsu_size) -> MsgGenerator:
     yield from move_dsd(5000, wait=True)
     yield from align_dsu(dsu_size)
     yield from align_dsd(dsd_size)
@@ -242,7 +198,7 @@ def align_slit(
     yield from abs_set(slit.y_gap, y_open_size, group=group_wait)
     yield from wait(group=group_wait)
     yield from mv(slit.y_centre, y_cen, group=group_wait)  # type: ignore
-    start_pos, end_pos, num = slit_cal_range_num(x_cen, x_range, x_scan_size)
+    start_pos, end_pos, num = cal_range_num(x_cen, x_range, x_scan_size)
     yield from step_scan_and_move_cen(
         det=det,
         motor=slit.x_centre,
@@ -257,7 +213,7 @@ def align_slit(
     yield from abs_set(slit.y_gap, y_scan_size, group=group_wait)
     yield from abs_set(slit.x_gap, x_open_size, group=group_wait)
     yield from wait(group=group_wait)
-    start_pos, end_pos, num = slit_cal_range_num(y_cen, y_range, y_scan_size)
+    start_pos, end_pos, num = cal_range_num(y_cen, y_range, y_scan_size)
     yield from step_scan_and_move_cen(
         det=det,
         motor=slit.y_centre,
@@ -270,14 +226,6 @@ def align_slit(
     yield from abs_set(slit.x_gap, x_final_size, group=group_wait)
     yield from abs_set(slit.y_gap, y_final_size, group=group_wait)
     yield from wait(group=group_wait)
-
-
-def slit_cal_range_num(cen, range, size) -> tuple[float, float, int]:
-    """Calculate the start, end and the number of step for the scan"""
-    start_pos = cen - range
-    end_pos = cen + range
-    num = math.ceil(abs(range * 4.0 / size))
-    return start_pos, end_pos, num
 
 
 def move_to_direct_beam_position():

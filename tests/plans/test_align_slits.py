@@ -10,38 +10,13 @@ from dodal.beamlines.i10 import (
     slits,
 )
 
-from i10_bluesky.plans.align_slits import align_s5s6, align_slit, slit_cal_range_num
+from i10_bluesky.plans.align_slits import align_s5s6, align_slit
 
 docs = defaultdict(list)
 
 
 def capture_emitted(name, doc):
     docs[name].append(doc)
-
-
-@pytest.mark.parametrize(
-    "test_input, expected_output",
-    [
-        (
-            [5, -5, 0.1],
-            (10, 0, 200),
-        ),
-        (
-            [50.6, 55.4, 15],
-            (-4.8, 106, 15),
-        ),
-        (
-            [
-                -1.1,
-                -2.5,
-                31,
-            ],
-            (1.4, -3.6, 1),
-        ),
-    ],
-)
-def test_slit_cal_range_num(test_input, expected_output):
-    assert slit_cal_range_num(*test_input) == pytest.approx(expected_output, 0.01)
 
 
 @patch(
@@ -58,7 +33,7 @@ def test_align_s5s6(mock_align_slit: MagicMock):
     assert len(msgs) == 1
 
 
-@patch("i10_bluesky.plans.align_slits.slit_cal_range_num", return_value=[1, 1, 1])
+@patch("i10_bluesky.plans.align_slits.cal_range_num", return_value=[1, 1, 1])
 @patch(
     "i10_bluesky.plans.align_slits.step_scan_and_move_cen",
 )

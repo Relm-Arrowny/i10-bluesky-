@@ -4,7 +4,7 @@ from typing import TypeVar, cast
 
 from bluesky import preprocessors as bpp
 from bluesky.callbacks.fitting import PeakStats
-from bluesky.plan_stubs import abs_set
+from bluesky.plan_stubs import abs_set, locate
 from bluesky.plans import scan
 from dodal.common.types import MsgGenerator
 from ophyd_async.core import StandardReadable
@@ -12,6 +12,7 @@ from ophyd_async.epics.motor import Motor
 from p99_bluesky.plans.fast_scan import fast_scan_1d
 
 from i10_bluesky.log import LOGGER
+from i10_bluesky.plans.utils.helpers import cal_range_num
 
 
 class PeakPosition(tuple, Enum):
@@ -113,3 +114,28 @@ def get_stat_loc(ps: PeakStats, loc: PeakPosition) -> float:
 
     stat_pos = getattr(stat, loc.value[1])
     return stat_pos if isinstance(stat_pos, float) else stat_pos[0]
+
+
+def align_motor_with_look_up(
+    slit: Motor,
+    size: float,
+    slit_table: dict[str, float],
+    det: StandardReadable,
+    det_name: str = "",
+    motor_name: str = "",
+    centre_type: PeakPosition = PeakPosition.COM,
+) -> MsgGenerator:
+    start_pos, end_pos, num = cal_range_num(
+        cen=slit_table[str(size)], range=size * 3, size=size / 5.0
+    )
+    yield from step_scan_and_move_cen(
+        det=det,
+        motor=slit,
+        start=start_pos,
+        end=end_pos,
+        num=num,
+        det_name=det_name,
+        motor_name=motor_name,
+        loc=centre_type,
+    )
+    slit_table[str(size)] = yield from locate(slit)["readback"]
