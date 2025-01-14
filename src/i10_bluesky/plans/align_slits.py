@@ -1,7 +1,8 @@
-import math
+from collections.abc import Hashable
 
 from bluesky.plan_stubs import abs_set, mv, wait
 from dodal.beamlines.i10 import (
+    det_slits,
     diffractometer,
     rasor_femto_pa_scaler_det,
     simple_stage,
@@ -12,7 +13,88 @@ from dodal.devices.slits import Slits
 from ophyd_async.core import StandardReadable
 
 from i10_bluesky.log import LOGGER
-from i10_bluesky.plans.utils import PeakPosition, step_scan_and_move_cen
+from i10_bluesky.plans.utils import (
+    PeakPosition,
+    align_motor_with_look_up,
+    cal_range_num,
+    move_motor_with_look_up,
+    step_scan_and_move_cen,
+)
+
+"""I10 has fix/solid slit on a motor, this store the rough opening
+ position against slit size in um"""
+
+DSD = {"5000": 14.3, "1000": 19.3, "500": 26.5, "100": 29.3, "50": 34.3}
+DSU = {"5000": 16.7, "1000": 21.7, "500": 25.674, "100": 31.7, "50": 36.7}
+
+RASOR_DEFAULT_DET = rasor_femto_pa_scaler_det()
+RASOR_DEFAULT_DET_NAME_EXTENSION = "-current"
+
+
+def move_dsu(
+    size: float,
+    slit_table=DSU,
+    use_motor_position: bool = False,
+    wait=True,
+    group: Hashable | None = None,
+) -> MsgGenerator:
+    yield from move_motor_with_look_up(
+        slit=det_slits().upstream,
+        size=size,
+        motor_table=slit_table,
+        use_motor_position=use_motor_position,
+        wait=wait,
+        group=group,
+    )
+
+
+def move_dsd(
+    size: float,
+    slit_table=DSD,
+    use_motor_position: bool = False,
+    wait=True,
+    group: Hashable | None = None,
+) -> MsgGenerator:
+    yield from move_motor_with_look_up(
+        slit=det_slits().downstream,
+        size=size,
+        motor_table=slit_table,
+        use_motor_position=use_motor_position,
+        wait=wait,
+        group=group,
+    )
+
+
+def align_dsu(size, det=None, det_name: str = "") -> MsgGenerator:
+    if det is None:
+        det, det_name = get_rasor_default_det()
+    yield from align_motor_with_look_up(
+        motor=det_slits().upstream,
+        size=size,
+        motor_table=DSU,
+        det=det,
+        det_name=det_name,
+        centre_type=PeakPosition.COM,
+    )
+
+
+def align_dsd(size, det=None, det_name: str = "") -> MsgGenerator:
+    if det is None:
+        det, det_name = get_rasor_default_det()
+    yield from align_motor_with_look_up(
+        motor=det_slits().downstream,
+        size=size,
+        motor_table=DSD,
+        det=det,
+        det_name=det_name,
+        centre_type=PeakPosition.COM,
+    )
+
+
+def align_pa_slit(dsd_size, dsu_size) -> MsgGenerator:
+    yield from move_dsd(5000, wait=True)
+    yield from align_dsu(dsu_size)
+    yield from align_dsd(dsd_size)
 
 
 def align_s5s6(
@@ -32,25 +114,18 @@ def align_s5s6(
     """
 
     if det is None:
-        det = rasor_femto_pa_scaler_det()
-        det_name = "-current"
-    diff = diffractometer()
-    s_stage = simple_stage()
+        det, det_name = get_rasor_default_det()
+
     slit = slits()
-    group_wait = "diff group A"
-    LOGGER.info("Moving to straight through and dropping sample")
-    yield from abs_set(diff.tth, 0, group=group_wait)
-    yield from abs_set(diff.th, 0, group=group_wait)  # type: ignore  # See: https://github.com/bluesky/bluesky/issues/1809
-    yield from abs_set(s_stage.y, -3, group=group_wait)  # type: ignore
-    yield from wait(group=group_wait)
-    LOGGER.info("Aligning s5")
+    yield from move_to_direct_beam_position()
+
     yield from align_slit(
         det=det,
         slit=slit.s5,
         x_scan_size=0.1,
         x_final_size=0.65,
         x_range=2,
-        x_open_size=4,
+        x_open_size=2,
         x_cen=0,
         y_scan_size=0.1,
         y_final_size=1.3,
@@ -141,8 +216,7 @@ def align_slit(
     LOGGER.info(f"Moving to starting position for {slit.x_centre.name} alignment.")
     yield from wait(group=group_wait)
     yield from mv(slit.y_centre, y_cen, group=group_wait)  # type: ignore
-    start_pos, end_pos, num = slit_cal_range_num(x_cen, x_range, x_scan_size)
-
+    start_pos, end_pos, num = cal_range_num(x_cen, x_range, x_scan_size)
     yield from step_scan_and_move_cen(
         det=det,
         motor=slit.x_centre,
@@ -158,8 +232,7 @@ def align_slit(
     yield from abs_set(slit.x_gap, x_open_size, group=group_wait)
     LOGGER.info(f"Moving to starting position for {slit.y_centre.name} alignment.")
     yield from wait(group=group_wait)
-    start_pos, end_pos, num = slit_cal_range_num(y_cen, y_range, y_scan_size)
-
+    start_pos, end_pos, num = cal_range_num(y_cen, y_range, y_scan_size)
     yield from step_scan_and_move_cen(
         det=det,
         motor=slit.y_centre,
@@ -174,9 +247,18 @@ def align_slit(
     yield from wait(group=group_wait)
 
 
-def slit_cal_range_num(cen, range, size) -> tuple[float, float, int]:
-    """Calculate the start, end and the number of step for the scan"""
-    start_pos = cen - range
-    end_pos = cen + range
-    num = math.ceil(abs(range * 4.0 / size))
-    return start_pos, end_pos, num
+def move_to_direct_beam_position():
+    """Remove everything in the way of the beam"""
+    diff = diffractometer()
+    s_stage = simple_stage()
+    group_wait = "diff group A"
+    yield from abs_set(diff.tth, 0, group=group_wait)
+    yield from abs_set(diff.th, 0, group=group_wait)  # type: ignore  # See: https://github.com/bluesky/bluesky/issues/1809
+    yield from abs_set(s_stage.y, -3, group=group_wait)  # type: ignore
+    yield from wait(group=group_wait)
+
+
+def get_rasor_default_det() -> tuple[StandardReadable, str]:
+    det = RASOR_DEFAULT_DET
+    det_name = RASOR_DEFAULT_DET_NAME_EXTENSION
+    return det, det_name

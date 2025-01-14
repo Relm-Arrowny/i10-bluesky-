@@ -9,9 +9,11 @@ from p99_bluesky.devices.stages import ThreeAxisStage
 
 from i10_bluesky.plans.utils import (
     PeakPosition,
+    align_motor_with_look_up,
+    fast_scan_and_move_cen,
     step_scan_and_move_cen,
 )
-from i10_bluesky.plans.utils.alignments import fast_scan_and_move_cen
+from i10_bluesky.plans.utils.helpers import cal_range_num
 from sim_devices import sim_detector
 
 docs = defaultdict(list)
@@ -70,7 +72,7 @@ async def test_scan_and_move_cen_success_with_default_value_gaussain(
         sim_motor_step.x.user_setpoint,
         lambda *_, **__: set_mock_value(fake_detector.value, value=rbv_mocks.get()),
     )
-
+    docs = defaultdict(list)
     RE(
         step_scan_and_move_cen(
             det=fake_detector,
@@ -124,7 +126,7 @@ async def test_scan_and_move_cen_success_with_default_value_step(
         sim_motor_step.x.user_setpoint,
         lambda *_, **__: set_mock_value(fake_detector.value, value=rbv_mocks.get()),
     )
-
+    docs = defaultdict(list)
     RE(
         step_scan_and_move_cen(
             det=fake_detector,
@@ -183,7 +185,7 @@ async def test_scan_and_move_cen_fail_to_with_wrong_name(
         ),
     ],
 )
-async def test_scan_and_move_cen_failed_with_no_peak_in_ranage(
+async def test_scan_and_move_cen_failed_with_no_peak_in_range(
     RE: RunEngine,
     sim_motor_step: ThreeAxisStage,
     fake_detector: sim_detector,
@@ -207,7 +209,6 @@ async def test_scan_and_move_cen_failed_with_no_peak_in_ranage(
         sim_motor_step.x.user_setpoint,
         lambda *_, **__: set_mock_value(fake_detector.value, value=rbv_mocks.get()),
     )
-
     with pytest.raises(ValueError) as e:
         RE(
             step_scan_and_move_cen(
@@ -220,6 +221,59 @@ async def test_scan_and_move_cen_failed_with_no_peak_in_ranage(
                 det_name="-value",
                 loc=PeakPosition.CEN,
             ),
-            capture_emitted,
         )
     assert str(e.value) == "Fitting failed, no peak within scan range."
+
+
+FAKEDSU = {"5000": 16.7, "1000": 21.7, "500": 25.674, "100": 31.7, "50": 36.7}
+
+
+@pytest.mark.parametrize(
+    "size, expected_centre, offset",
+    [
+        (5000, 16.7, 0.1),
+        (1000, 21.7, 0.2),
+        (500, 25.6, 0.2),
+    ],
+)
+async def test_align_motor_with_look_up(
+    RE: RunEngine,
+    sim_motor_step: ThreeAxisStage,
+    fake_detector: sim_detector,
+    size,
+    expected_centre,
+    offset,
+):
+    start, end, num = cal_range_num(
+        cen=FAKEDSU[str(size)], range=size / 1000 * 3, size=size / 5000.0
+    )
+    peak_width = FAKEDSU[str(size)] * 0.5
+    cen = FAKEDSU[str(size)] + offset
+    # Generate gaussian
+    x_data = np.linspace(start, end, num, endpoint=True)
+    y_data = gaussian(x_data, cen, peak_width)
+
+    rbv_mocks = Mock()
+    y_data = np.append(y_data, [0] * 2)
+    y_data = np.array(y_data, dtype=np.float64)
+    rbv_mocks.get.side_effect = y_data
+    callback_on_mock_put(
+        sim_motor_step.y.user_setpoint,
+        lambda *_, **__: set_mock_value(fake_detector.value, value=rbv_mocks.get()),
+    )
+    docs = defaultdict(list)
+    RE(
+        align_motor_with_look_up(
+            motor=sim_motor_step.y,
+            size=size,
+            motor_table=FAKEDSU,
+            det=fake_detector,
+        ),
+        capture_emitted,
+    )
+    y_data1 = np.array([])
+    x_data1 = np.array([])
+    for i in docs["event"]:
+        y_data1 = np.append(y_data1, i["data"]["fake_detector-value"])
+        x_data1 = np.append(x_data1, i["data"]["sim_motor_step-y-user_readback"])
+    assert FAKEDSU[str(size)] == pytest.approx(expected_centre + offset, 0.01)

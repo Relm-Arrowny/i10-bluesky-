@@ -4,13 +4,22 @@ from unittest.mock import ANY, MagicMock, patch
 import pytest
 from bluesky.simulators import RunEngineSimulator, assert_message_and_return_remaining
 from dodal.beamlines.i10 import (
+    det_slits,
     diffractometer,
     rasor_femto_pa_scaler_det,
     simple_stage,
     slits,
 )
 
-from i10_bluesky.plans.align_slits import align_s5s6, align_slit, slit_cal_range_num
+from i10_bluesky.plans.align_slits import (
+    DSD,
+    DSU,
+    align_pa_slit,
+    align_s5s6,
+    align_slit,
+    move_dsd,
+    move_dsu,
+)
 
 docs = defaultdict(list)
 
@@ -19,29 +28,33 @@ def capture_emitted(name, doc):
     docs[name].append(doc)
 
 
-@pytest.mark.parametrize(
-    "test_input, expected_output",
-    [
-        (
-            [5, -5, 0.1],
-            (10, 0, 200),
-        ),
-        (
-            [50.6, 55.4, 15],
-            (-4.8, 106, 15),
-        ),
-        (
-            [
-                -1.1,
-                -2.5,
-                31,
-            ],
-            (1.4, -3.6, 1),
-        ),
-    ],
+def test_move_dsu():
+    sim = RunEngineSimulator()
+    msgs = sim.simulate_plan(move_dsu(5000))
+    msgs = check_msg_set(msgs=msgs, obj=det_slits().upstream, value=DSU["5000"])
+    msgs = check_msg_wait(msgs=msgs, wait_group=ANY, wait=True)
+    assert len(msgs) == 1
+
+
+def test_move_dsd():
+    sim = RunEngineSimulator()
+    msgs = sim.simulate_plan(move_dsd(50))
+    msgs = check_msg_set(msgs=msgs, obj=det_slits().downstream, value=DSD["50"])
+    msgs = check_msg_wait(msgs=msgs, wait_group=ANY, wait=True)
+    assert len(msgs) == 1
+
+
+@patch(
+    "i10_bluesky.plans.align_slits.align_motor_with_look_up",
 )
-def test_slit_cal_range_num(test_input, expected_output):
-    assert slit_cal_range_num(*test_input) == pytest.approx(expected_output, 0.01)
+def test_align_pa_slit(fake_step_scan_and_move_cen: MagicMock):
+    sim = RunEngineSimulator()
+    msgs = sim.simulate_plan(align_pa_slit(dsd_size=50, dsu_size=50))
+    msgs = check_msg_set(msgs=msgs, obj=det_slits().downstream, value=DSD["5000"])
+    msgs = check_msg_wait(msgs=msgs, wait_group=ANY, wait=True)
+
+    assert len(msgs) == 1
+    assert fake_step_scan_and_move_cen.call_count == 2
 
 
 @patch(
@@ -58,7 +71,7 @@ def test_align_s5s6(mock_align_slit: MagicMock):
     assert len(msgs) == 1
 
 
-@patch("i10_bluesky.plans.align_slits.slit_cal_range_num", return_value=[1, 1, 1])
+@patch("i10_bluesky.plans.align_slits.cal_range_num", return_value=[1, 1, 1])
 @patch(
     "i10_bluesky.plans.align_slits.step_scan_and_move_cen",
 )
@@ -126,12 +139,17 @@ def check_msg_set(msgs, obj, value):
     )
 
 
-def check_msg_wait(msgs, wait_group):
+def check_msg_wait(msgs, wait_group, wait=False):
+    wait_msg = (
+        {"group": wait_group}
+        if wait
+        else {"group": wait_group, "move_on": False, "timeout": None}
+    )
     return assert_message_and_return_remaining(
         msgs,
         lambda msg: msg.command == "wait"
         and msg.obj is None
-        and msg.kwargs == {"group": wait_group, "move_on": False, "timeout": None},
+        and msg.kwargs == wait_msg,
     )
 
 
