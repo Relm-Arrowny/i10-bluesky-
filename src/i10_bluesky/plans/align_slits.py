@@ -68,9 +68,9 @@ def align_dsu(size, det=None, det_name: str = "") -> MsgGenerator:
     if det is None:
         det, det_name = get_rasor_default_det()
     yield from align_motor_with_look_up(
-        slit=det_slits().upstream,
+        motor=det_slits().upstream,
         size=size,
-        slit_table=DSU,
+        motor_table=DSU,
         det=det,
         det_name=det_name,
         centre_type=PeakPosition.COM,
@@ -81,9 +81,9 @@ def align_dsd(size, det=None, det_name: str = "") -> MsgGenerator:
     if det is None:
         det, det_name = get_rasor_default_det()
     yield from align_motor_with_look_up(
-        slit=det_slits().downstream,
+        motor=det_slits().downstream,
         size=size,
-        slit_table=DSD,
+        motor_table=DSD,
         det=det,
         det_name=det_name,
         centre_type=PeakPosition.COM,
