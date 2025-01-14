@@ -93,12 +93,20 @@ async def test_scan_and_move_cen_success_with_default_value_gaussain(
     )
 
 
+def step_function(x_data, step_centre):
+    return [0 if x < step_centre else 1 for x in x_data]
+
+
 @pytest.mark.parametrize(
     "test_input, expected_centre",
     [
         (
-            [5, -5, 21, 0.1],
+            [3, -3, 101],
             -1,
+        ),
+        (
+            [0.1, 0.5, 101],
+            0.2,
         ),
     ],
 )
@@ -112,11 +120,10 @@ async def test_scan_and_move_cen_success_with_default_value_step(
     start = test_input[0]
     end = test_input[1]
     num = test_input[2]
-    peak_width = test_input[3]
     cen = expected_centre
     # Generate gaussian
     x_data = np.linspace(start, end, num, endpoint=True)
-    y_data = gaussian(x_data, cen, peak_width)
+    y_data = step_function(x_data, cen)
 
     rbv_mocks = Mock()
     y_data = np.append(y_data, [0] * 2)
@@ -134,6 +141,7 @@ async def test_scan_and_move_cen_success_with_default_value_step(
             start=start,
             end=end,
             num=num,
+            loc=PeakPosition.D_CEN,
         ),
         capture_emitted,
     )
