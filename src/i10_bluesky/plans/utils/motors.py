@@ -18,6 +18,27 @@ def move_motor_with_look_up(
     wait=True,
     group: Hashable | None = None,
 ) -> MsgGenerator:
+    """Perform a step scan with the the range and starting motor position
+      given/calculated by using a look up table(dictionary).
+      Move to the peak position after the scan and update the lookup table.
+    Parameters
+    ----------
+    motor: Motor
+        Motor devices that is being centre.
+    size: float,
+        The size/name in the motor_table.
+    slit_table: dict[str, float],
+        Look up table for motor position, the str part should be the size of
+        the slit in um.
+    det: StandardReadable,
+        Detector to be use for alignment.
+    det_name: str | None = None,
+        Name extension for the det.
+    motor_name: str | None = None,
+        Name extension for the motor.
+    centre_type: PeakPosition | None = None,
+        Which fitted position to move to see PeakPosition.
+    """
     MotorTable.model_validate(motor_table)
     if use_motor_position:
         yield from abs_set(slit, size, wait=wait, group=group)

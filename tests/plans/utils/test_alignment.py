@@ -9,7 +9,7 @@ from p99_bluesky.devices.stages import ThreeAxisStage
 
 from i10_bluesky.plans.utils import (
     PeakPosition,
-    align_motor_with_look_up,
+    align_slit_with_look_up,
     fast_scan_and_move_cen,
     step_scan_and_move_cen,
 )
@@ -236,7 +236,7 @@ FAKEDSU = {"5000": 16.7, "1000": 21.7, "500": 25.674, "100": 31.7, "50": 36.7}
         (500, 25.6, 0.2),
     ],
 )
-async def test_align_motor_with_look_up(
+async def test_align_slit_with_look_up(
     RE: RunEngine,
     sim_motor_step: ThreeAxisStage,
     fake_detector: sim_detector,
@@ -263,10 +263,10 @@ async def test_align_motor_with_look_up(
     )
     docs = defaultdict(list)
     RE(
-        align_motor_with_look_up(
+        align_slit_with_look_up(
             motor=sim_motor_step.y,
             size=size,
-            motor_table=FAKEDSU,
+            slit_table=FAKEDSU,
             det=fake_detector,
         ),
         capture_emitted,

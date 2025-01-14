@@ -15,13 +15,13 @@ from ophyd_async.core import StandardReadable
 from i10_bluesky.log import LOGGER
 from i10_bluesky.plans.utils import (
     PeakPosition,
-    align_motor_with_look_up,
+    align_slit_with_look_up,
     cal_range_num,
     move_motor_with_look_up,
     step_scan_and_move_cen,
 )
 
-"""I10 has fix/solid slit on a motor, this store the rough opening
+"""I10 has fix/solid slit on a motor, this store the rough motor opening
  position against slit size in um"""
 
 DSD = {"5000": 14.3, "1000": 19.3, "500": 26.5, "100": 29.3, "50": 34.3}
@@ -68,10 +68,10 @@ def move_dsd(
 def align_dsu(size, det=None, det_name: str = "") -> MsgGenerator:
     if det is None:
         det, det_name = get_rasor_default_det()
-    yield from align_motor_with_look_up(
+    yield from align_slit_with_look_up(
         motor=det_slits().upstream,
         size=size,
-        motor_table=DSU,
+        slit_table=DSU,
         det=det,
         det_name=det_name,
         centre_type=PeakPosition.COM,
@@ -81,17 +81,17 @@ def align_dsu(size, det=None, det_name: str = "") -> MsgGenerator:
 def align_dsd(size, det=None, det_name: str = "") -> MsgGenerator:
     if det is None:
         det, det_name = get_rasor_default_det()
-    yield from align_motor_with_look_up(
+    yield from align_slit_with_look_up(
         motor=det_slits().downstream,
         size=size,
-        motor_table=DSD,
+        slit_table=DSD,
         det=det,
         det_name=det_name,
         centre_type=PeakPosition.COM,
     )
 
 
-def align_pa_slit(dsd_size, dsu_size) -> MsgGenerator:
+def align_pa_slit(dsd_size: float, dsu_size: float) -> MsgGenerator:
     yield from move_dsd(5000, wait=True)
     yield from align_dsu(dsu_size)
     yield from align_dsd(dsd_size)
@@ -259,6 +259,7 @@ def move_to_direct_beam_position():
 
 
 def get_rasor_default_det() -> tuple[StandardReadable, str]:
+    """Return default detector and its name."""
     det = RASOR_DEFAULT_DET
     det_name = RASOR_DEFAULT_DET_NAME_EXTENSION
     return det, det_name

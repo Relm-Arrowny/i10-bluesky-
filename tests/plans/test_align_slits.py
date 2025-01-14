@@ -45,7 +45,7 @@ def test_move_dsd():
 
 
 @patch(
-    "i10_bluesky.plans.align_slits.align_motor_with_look_up",
+    "i10_bluesky.plans.align_slits.align_slit_with_look_up",
 )
 def test_align_pa_slit(fake_step_scan_and_move_cen: MagicMock):
     sim = RunEngineSimulator()

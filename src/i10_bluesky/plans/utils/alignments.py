@@ -13,6 +13,7 @@ from p99_bluesky.plans.fast_scan import fast_scan_1d
 
 from i10_bluesky.log import LOGGER
 from i10_bluesky.plans.utils.helpers import cal_range_num
+from i10_bluesky.plans.utils.motors import MotorTable
 
 
 class PeakPosition(tuple, Enum):
@@ -39,7 +40,7 @@ TCallable = TypeVar("TCallable", bound=Callable)
 
 
 def scan_and_move_cen(funcs: TCallable) -> TCallable:
-    """Wrapper to added PeakStats call back before performing scan
+    """Wrapper to add PeakStats call back before performing scan
     and move to the fitted position after scan"""
 
     def inner(**kwargs):
@@ -78,7 +79,26 @@ def step_scan_and_move_cen(
     det_name: str | None = None,
     loc: PeakPosition | None = None,
 ) -> MsgGenerator:
-    """Does a step scan and move to the fitted position"""
+    """Does a step scan and move to the fitted position
+       Parameters
+    ----------
+    det: StandardReadable,
+        Detector to be use for alignment.
+    motor: Motor
+        Motor devices that is being centre.
+    start: float,
+        Starting position for the scan.
+    end: float,
+        Ending position for the scan.
+    num:int
+        Number of step.
+    motor_name: str | None = None,
+        Name extension for the motor.
+    det_name: str | None = None,
+        Name extension for the det.
+    loc: PeakPosition | None = None,
+        Which fitted position to move to see PeakPosition
+    """
     LOGGER.info(
         f"Step scaning {motor}{motor_name} with {det}{det_name} pro-scan move to {loc}"
     )
@@ -96,7 +116,26 @@ def fast_scan_and_move_cen(
     loc: PeakPosition | None = None,
     motor_speed: float | None = None,
 ) -> MsgGenerator:
-    """Does a fast non-stopping scan and move to the fitted position"""
+    """Does a fast non-stopping scan and move to the fitted position
+    Parameters
+    ----------
+    det: StandardReadable,
+        Detector to be use for alignment.
+    motor: Motor
+        Motor devices that is being centre.
+    start: float,
+        Starting position for the scan.
+    end: float,
+        Ending position for the scan.
+    det_name: str | None = None,
+        Name extension for the det.
+    motor_name: str | None = None,
+        Name extension for the motor.
+    loc: PeakPosition | None = None,
+        Which fitted position to move to see PeakPosition.
+    motor_speed: float | None = None,
+        Speed of the motor.
+    """
     LOGGER.info(
         f"Fast scaning {motor}{motor_name} with {det}{det_name} pro-scan move to {loc}"
     )
@@ -116,17 +155,39 @@ def get_stat_loc(ps: PeakStats, loc: PeakPosition) -> float:
     return stat_pos if isinstance(stat_pos, float) else stat_pos[0]
 
 
-def align_motor_with_look_up(
+def align_slit_with_look_up(
     motor: Motor,
     size: float,
-    motor_table: dict[str, float],
+    slit_table: dict[str, float],
     det: StandardReadable,
     det_name: str | None = None,
     motor_name: str | None = None,
     centre_type: PeakPosition | None = None,
 ) -> MsgGenerator:
+    """Perform a step scan with the the range and starting motor position
+      given/calculated by using a look up table(dictionary).
+      Move to the peak position after the scan and update the lookup table.
+    Parameters
+    ----------
+    motor: Motor
+        Motor devices that is being centre.
+    size: float,
+        The size/name in the motor_table.
+    motor_table: dict[str, float],
+        Look up table for motor position, the str part should be the size of
+        the slit in um.
+    det: StandardReadable,
+        Detector to be use for alignment.
+    det_name: str | None = None,
+        Name extension for the det.
+    motor_name: str | None = None,
+        Name extension for the motor.
+    centre_type: PeakPosition | None = None,
+        Which fitted position to move to see PeakPosition.
+    """
+    MotorTable.model_validate(slit_table)
     start_pos, end_pos, num = cal_range_num(
-        cen=motor_table[str(size)], range=size / 1000 * 3, size=size / 5000.0
+        cen=slit_table[str(size)], range=size / 1000 * 3, size=size / 5000.0
     )
     yield from step_scan_and_move_cen(
         det=det,
@@ -139,4 +200,4 @@ def align_motor_with_look_up(
         loc=centre_type,
     )
     temp = yield from read(motor.user_readback)
-    motor_table[str(size)] = temp[motor.name + "-user_readback"]["value"]
+    slit_table[str(size)] = temp[motor.name + "-user_readback"]["value"]
