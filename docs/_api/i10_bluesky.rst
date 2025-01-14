@@ -3,11 +3,3 @@
 
 .. automodule:: i10_bluesky
     :members:
-
-    
-    
-    
-
-    
-    
-    
