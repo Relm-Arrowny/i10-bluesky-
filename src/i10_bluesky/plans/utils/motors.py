@@ -15,7 +15,7 @@ def move_motor_with_look_up(
     size: float,
     motor_table: dict[str, float],
     use_motor_position: bool = False,
-    wait=True,
+    wait: bool = True,
     group: Hashable | None = None,
 ) -> MsgGenerator:
     """Perform a step scan with the the range and starting motor position

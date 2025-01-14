@@ -33,9 +33,9 @@ RASOR_DEFAULT_DET_NAME_EXTENSION = "-current"
 
 def move_dsu(
     size: float,
-    slit_table=DSU,
+    slit_table: dict[str, float] = DSU,
     use_motor_position: bool = False,
-    wait=True,
+    wait: bool = True,
     group: Hashable | None = None,
 ) -> MsgGenerator:
     yield from move_motor_with_look_up(
@@ -50,9 +50,9 @@ def move_dsu(
 
 def move_dsd(
     size: float,
-    slit_table=DSD,
+    slit_table: dict[str, float] = DSD,
     use_motor_position: bool = False,
-    wait=True,
+    wait: bool = True,
     group: Hashable | None = None,
 ) -> MsgGenerator:
     yield from move_motor_with_look_up(
@@ -65,7 +65,9 @@ def move_dsd(
     )
 
 
-def align_dsu(size, det=None, det_name: str = "") -> MsgGenerator:
+def align_dsu(
+    size: float, det: StandardReadable | None = None, det_name: str | None = None
+) -> MsgGenerator:
     if det is None:
         det, det_name = get_rasor_default_det()
     yield from align_slit_with_look_up(
@@ -78,7 +80,9 @@ def align_dsu(size, det=None, det_name: str = "") -> MsgGenerator:
     )
 
 
-def align_dsd(size, det=None, det_name: str = "") -> MsgGenerator:
+def align_dsd(
+    size: float, det: StandardReadable | None = None, det_name: str | None = None
+) -> MsgGenerator:
     if det is None:
         det, det_name = get_rasor_default_det()
     yield from align_slit_with_look_up(
