@@ -285,3 +285,21 @@ async def test_align_slit_with_look_up(
         y_data1 = np.append(y_data1, i["data"]["fake_detector-value"])
         x_data1 = np.append(x_data1, i["data"]["sim_motor_step-y-user_readback"])
     assert FAKEDSU[str(size)] == pytest.approx(expected_centre + offset, 0.01)
+
+
+async def test_align_slit_with_look_up_fail_wrong_key(
+    RE: RunEngine,
+    sim_motor_step: ThreeAxisStage,
+    fake_detector: sim_detector,
+):
+    size = 555
+    with pytest.raises(ValueError) as e:
+        RE(
+            align_slit_with_look_up(
+                motor=sim_motor_step.y,
+                size=size,
+                slit_table=FAKEDSU,
+                det=fake_detector,
+            ),
+        )
+    assert str(e.value) == f"Size of {size} is not in {FAKEDSU.keys}"

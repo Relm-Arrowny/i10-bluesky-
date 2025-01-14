@@ -100,7 +100,7 @@ def step_scan_and_move_cen(
         Which fitted position to move to see PeakPosition
     """
     LOGGER.info(
-        f"Step scaning {motor}{motor_name} with {det}{det_name} pro-scan move to {loc}"
+        f"Step scanning {motor}{motor_name} with {det}{det_name} pro-scan move to {loc}"
     )
     return scan([det], motor, start, end, num=num)
 
@@ -186,9 +186,12 @@ def align_slit_with_look_up(
         Which fitted position to move to see PeakPosition.
     """
     MotorTable.model_validate(slit_table)
-    start_pos, end_pos, num = cal_range_num(
-        cen=slit_table[str(size)], range=size / 1000 * 3, size=size / 5000.0
-    )
+    if str(int(size)) in slit_table:
+        start_pos, end_pos, num = cal_range_num(
+            cen=slit_table[str(size)], range=size / 1000 * 3, size=size / 5000.0
+        )
+    else:
+        raise ValueError(f"Size of {size} is not in {slit_table.keys}")
     yield from step_scan_and_move_cen(
         det=det,
         motor=motor,
