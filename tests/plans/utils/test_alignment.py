@@ -121,7 +121,7 @@ async def test_scan_and_move_cen_success_with_default_value_step(
     end = test_input[1]
     num = test_input[2]
     cen = expected_centre
-    # Generate gaussian
+    # Generate a step
     x_data = np.linspace(start, end, num, endpoint=True)
     y_data = step_function(x_data, cen)
 
