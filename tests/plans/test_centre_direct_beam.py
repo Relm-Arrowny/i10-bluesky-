@@ -2,14 +2,22 @@ from collections import defaultdict
 from unittest.mock import Mock, call, patch
 
 from bluesky.run_engine import RunEngine
-from dodal.beamlines.i10 import diffractometer
+from bluesky.simulators import RunEngineSimulator
+from dodal.beamlines.i10 import diffractometer, simple_stage
 
-from i10_bluesky.plans import centre_alpha, centre_det_angles, centre_tth
+from i10_bluesky.plans import (
+    centre_alpha,
+    centre_det_angles,
+    centre_tth,
+    move_pin_origin,
+)
 from i10_bluesky.plans.configuration.default_setting import (
     RASOR_DEFAULT_DET,
     RASOR_DEFAULT_DET_NAME_EXTENSION,
 )
 from i10_bluesky.plans.utils.alignments import PeakPosition
+
+from ..helper_functions import check_msg_set, check_msg_wait
 
 docs = defaultdict(list)
 
@@ -79,3 +87,22 @@ async def test_centre_det_angles(
         det_name=RASOR_DEFAULT_DET_NAME_EXTENSION,
         loc=PeakPosition.CEN,
     )
+
+
+def test_move_pin_origin_default():
+    sim = RunEngineSimulator()
+    msgs = sim.simulate_plan(move_pin_origin())
+    msgs = check_msg_set(msgs=msgs, obj=simple_stage().x, value=0)
+    msgs = check_msg_set(msgs=msgs, obj=simple_stage().y, value=0)
+    msgs = check_msg_set(msgs=msgs, obj=simple_stage().z, value=0)
+    msgs = check_msg_wait(msgs=msgs, wait_group="move_pin_origin")
+    assert len(msgs) == 1
+
+
+def test_move_pin_origin_default_without_wait():
+    sim = RunEngineSimulator()
+    msgs = sim.simulate_plan(move_pin_origin(wait=False))
+    msgs = check_msg_set(msgs=msgs, obj=simple_stage().x, value=0)
+    msgs = check_msg_set(msgs=msgs, obj=simple_stage().y, value=0)
+    msgs = check_msg_set(msgs=msgs, obj=simple_stage().z, value=0)
+    assert len(msgs) == 1

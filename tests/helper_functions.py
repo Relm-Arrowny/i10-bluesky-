@@ -14,6 +14,7 @@ def check_msg_wait(msgs, wait_group, wait=False):
         if wait
         else {"group": wait_group, "move_on": False, "timeout": None}
     )
+    print(wait_msg)
     return assert_message_and_return_remaining(
         msgs,
         lambda msg: msg.command == "wait"

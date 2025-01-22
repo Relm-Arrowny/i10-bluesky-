@@ -48,7 +48,7 @@ def remove_pin_hole(
     if wait and group is None:
         group = f"{pin_hole().name}_wait"
     LOGGER.info("Removing pin hole.")
-    yield from bps.abs_set(pin_hole().x, open_position, wait=wait, group=group)
+    yield from bps.abs_set(pin_hole().x, open_position, wait=False, group=group)
     if wait:
         LOGGER.info(f"Waiting for {pin_hole().name} to finish move.")
         yield from bps.wait(group=group)
@@ -58,10 +58,10 @@ def direct_beam_polan(wait: bool = True, group: Hashable | None = None) -> MsgGe
     if wait and group is None:
         group = f"{pa_stage().name}_wait"
     LOGGER.info(f"Removing {pa_stage().name}.")
-    yield from bps.abs_set(pa_stage().eta, 0, wait=wait, group=group)
-    yield from bps.abs_set(pa_stage().py, 0, wait=wait, group=group)
-    yield from bps.abs_set(pa_stage().ttp, 0, wait=wait, group=group)
-    yield from bps.abs_set(pa_stage().thp, 0, wait=wait, group=group)
+    yield from bps.abs_set(pa_stage().eta, 0, wait=False, group=group)
+    yield from bps.abs_set(pa_stage().py, 0, wait=False, group=group)
+    yield from bps.abs_set(pa_stage().ttp, 0, wait=False, group=group)
+    yield from bps.abs_set(pa_stage().thp, 0, wait=False, group=group)
     if wait:
         LOGGER.info(f"Waiting for {pa_stage().name} to finish move.")
         yield from bps.wait(group=group)

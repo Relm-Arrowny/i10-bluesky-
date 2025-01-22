@@ -1,4 +1,11 @@
-from dodal.beamlines.i10 import diffractometer
+from collections.abc import Hashable
+
+import bluesky.plan_stubs as bps
+from dodal.beamlines.i10 import (
+    diffractometer,
+    simple_stage,
+)
+from dodal.common.types import MsgGenerator
 from ophyd_async.core import StandardReadable
 
 from i10_bluesky.plans.configuration.default_setting import (
@@ -52,3 +59,13 @@ def centre_det_angles(
 ):
     yield from centre_tth(det, det_name)
     yield from centre_alpha(det, det_name)
+
+
+def move_pin_origin(wait: bool = True, group: Hashable | None = None) -> MsgGenerator:
+    if wait and group is None:
+        group = "move_pin_origin"
+    yield from bps.abs_set(simple_stage().x, 0, wait=False, group=group)
+    yield from bps.abs_set(simple_stage().y, 0, wait=False, group=group)
+    yield from bps.abs_set(simple_stage().z, 0, wait=False, group=group)
+    if wait:
+        yield from bps.wait(group=group)
