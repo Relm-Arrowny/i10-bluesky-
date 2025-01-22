@@ -61,6 +61,23 @@ def set_slit_size(
     wait: bool = True,
     group: Hashable | None = None,
 ) -> MsgGenerator:
+    """Set opening of an x-y slit.
+
+    Parameters
+    ----------
+    xy_slit: Slits
+        A slits device.
+    x_size: float
+        The x opening size.
+    y_size: float
+        The y opening size.
+    wait: bool
+        If this is true it will wait for all motions to finish.
+    group: Hashable
+        If given this will be the group name that pass along to bluesky, which
+        can be use at a later time.
+    """
+
     if wait and group is None:
         group = f"{xy_slit.name}_wait"
     if y_size is None:

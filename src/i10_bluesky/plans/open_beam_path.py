@@ -16,6 +16,20 @@ from i10_bluesky.plans.utils import set_slit_size
 def open_s5s6(
     size: float = S5S6_OPENING_SIZE, wait: bool = True, group: Hashable | None = None
 ) -> MsgGenerator:
+    """Open up clean up slits s5 and s6.
+
+    Parameters
+    ----------
+    size: float
+        The size of their opening both x and y will set to the same value.
+    wait: bool
+        If this is true it will set both slits to move and wait until it get to position
+        .
+    group: Hashable
+        If given this will be the group name that pass along to bluesky, which
+        can be use at a later time.
+    """
+
     if wait and group is None:
         group = f"{slits().name}__wait"
     yield from set_slit_size(slits().s5, size, wait=False, group=group)
@@ -30,6 +44,18 @@ def open_dsd_dsu(
     wait: bool = True,
     group: Hashable | None = None,
 ) -> MsgGenerator:
+    """Remove both detector slits
+    Parameters
+    ----------
+    open_position: float
+        The position of the opening.
+    wait: bool
+        If this is true it will wait until all motions are done.
+    group: Hashable
+        If given this will be the group name that pass along to bluesky, which
+        can be use at a later time.
+    """
+
     if wait and group is None:
         group = f"{det_slits().name}_wait"
     LOGGER.info("Opening Dsd and dsu, very slow motor may take minutes.")
@@ -45,6 +71,17 @@ def remove_pin_hole(
     wait: bool = True,
     group: Hashable | None = None,
 ) -> MsgGenerator:
+    """Move pin hole out of the way of the pin
+    Parameters
+    ----------
+    open_position: float
+        The position of the opening.
+    wait: bool
+        If this is true it will wait until all motions are done.
+    group: Hashable
+        If given this will be the group name that pass along to bluesky, which
+        can be use at a later time.
+    """
     if wait and group is None:
         group = f"{pin_hole().name}_wait"
     LOGGER.info("Removing pin hole.")
@@ -55,6 +92,16 @@ def remove_pin_hole(
 
 
 def direct_beam_polan(wait: bool = True, group: Hashable | None = None) -> MsgGenerator:
+    """
+    Move polarization analyzer out of the way of the beam.
+    Parameters
+    ----------
+    wait: bool
+        If this is true it will wait until all motions are done.
+    group: Hashable
+        If given this will be the group name that pass along to bluesky, which
+        can be use at a later time.
+    """
     if wait and group is None:
         group = f"{pa_stage().name}_wait"
     LOGGER.info(f"Removing {pa_stage().name}.")
@@ -68,6 +115,16 @@ def direct_beam_polan(wait: bool = True, group: Hashable | None = None) -> MsgGe
 
 
 def clear_beam_path(wait: bool = True, group: Hashable | None = None) -> MsgGenerator:
+    """Move everything out of the way of the direct beam
+    Parameters
+    ----------
+    wait: bool
+        If this is true it will wait until all motions are done.
+    group: Hashable
+        If given this will be the group name that pass along to bluesky, which
+        can be use at a later time.
+
+    """
     if group is None:
         group = "clear_beam_path"
     yield from open_s5s6(wait=False, group=group)

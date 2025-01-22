@@ -18,10 +18,12 @@ from i10_bluesky.plans.utils.alignments import PeakPosition, step_scan_and_move_
 def centre_tth(
     det: StandardReadable = RASOR_DEFAULT_DET,
     det_name: str = RASOR_DEFAULT_DET_NAME_EXTENSION,
-    start=-1,
-    end=1,
-    num=21,
+    start: float = -1,
+    end: float = 1,
+    num: int = 21,
 ):
+    """Centre two theta using Rasor dector."""
+
     yield from step_scan_and_move_cen(
         det=det,
         motor=diffractometer().tth,
@@ -37,10 +39,11 @@ def centre_tth(
 def centre_alpha(
     det: StandardReadable = RASOR_DEFAULT_DET,
     det_name: str = RASOR_DEFAULT_DET_NAME_EXTENSION,
-    start=-0.8,
-    end=0.8,
-    num=21,
+    start: float = -0.8,
+    end: float = 0.8,
+    num: int = 21,
 ):
+    """Centre rasor alpha using Rasor dector."""
     yield from step_scan_and_move_cen(
         det=det,
         motor=diffractometer().alpha,
@@ -57,11 +60,14 @@ def centre_det_angles(
     det: StandardReadable = RASOR_DEFAULT_DET,
     det_name: str = RASOR_DEFAULT_DET_NAME_EXTENSION,
 ):
+    """Centre both two theta and alpha angle on Rasor"""
     yield from centre_tth(det, det_name)
     yield from centre_alpha(det, det_name)
 
 
 def move_pin_origin(wait: bool = True, group: Hashable | None = None) -> MsgGenerator:
+    """Move the point to the centre of rotation."""
+
     if wait and group is None:
         group = "move_pin_origin"
     yield from bps.abs_set(simple_stage().x, 0, wait=False, group=group)
