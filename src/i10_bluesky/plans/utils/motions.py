@@ -61,7 +61,7 @@ def set_slit_size(
     wait: bool = True,
     group: Hashable | None = None,
 ) -> MsgGenerator:
-    if wait and group is not None:
+    if wait and group is None:
         group = f"{xy_slit.name}_wait"
     if y_size is None:
         y_size = x_size
