@@ -1,9 +1,13 @@
 from collections.abc import Hashable
 
+import bluesky.plan_stubs as bps
 from bluesky.plan_stubs import abs_set
 from dodal.common.types import MsgGenerator
+from dodal.devices.slits import Slits
 from ophyd_async.epics.motor import Motor
 from pydantic import RootModel
+
+from i10_bluesky.log import LOGGER
 
 
 class MotorTable(RootModel):
@@ -48,3 +52,22 @@ def move_motor_with_look_up(
         raise ValueError(
             f"No slit with size={size}. Available slit size: {motor_table}"
         )
+
+
+def set_slit_size(
+    xy_slit: Slits,
+    x_size: float,
+    y_size: float | None = None,
+    wait: bool = True,
+    group: Hashable | None = None,
+) -> MsgGenerator:
+    if wait and group is not None:
+        group = f"{xy_slit.name}_wait"
+    if y_size is None:
+        y_size = x_size
+    LOGGER.info(f"Setting {xy_slit.name} to x = {x_size}, y = {y_size}.")
+    yield from bps.abs_set(xy_slit.x_gap, x_size, group=group)
+    yield from bps.abs_set(xy_slit.y_gap, y_size, group=group)
+    if wait:
+        LOGGER.info(f"Waiting for {xy_slit.name} to finish move.")
+        yield from bps.wait(group=group)

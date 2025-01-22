@@ -1,13 +1,15 @@
 from collections import defaultdict
-from unittest.mock import ANY, Mock, patch
+from unittest.mock import Mock, call, patch
 
 from bluesky.run_engine import RunEngine
-from bluesky.simulators import RunEngineSimulator
 from dodal.beamlines.i10 import diffractometer
 
 from i10_bluesky.plans import centre_alpha, centre_det_angles, centre_tth
-
-from ..helper_functions import check_msg_set, check_mv_wait
+from i10_bluesky.plans.configuration.default_setting import (
+    RASOR_DEFAULT_DET,
+    RASOR_DEFAULT_DET_NAME_EXTENSION,
+)
+from i10_bluesky.plans.utils.alignments import PeakPosition
 
 docs = defaultdict(list)
 
@@ -16,37 +18,64 @@ def capture_emitted(name, doc):
     docs[name].append(doc)
 
 
-@patch("i10_bluesky.plans.utils.step_scan_and_move_cen")
+@patch("i10_bluesky.plans.centre_direct_beam.step_scan_and_move_cen")
 async def test_centre_tth(
-    fake_step_scan_and_move_cen: Mock, RE: RunEngine, fake_i10, fake_detector
+    fake_step_scan_and_move_cen: Mock,
+    RE: RunEngine,
+    fake_i10,
 ):
-    sim = RunEngineSimulator()
-    msgs = sim.simulate_plan(centre_tth(det=fake_detector))
-    msgs = check_msg_set(msgs=msgs, obj=diffractometer().tth, value=0)
-    msgs = check_mv_wait(msgs=msgs, wait_group=ANY)
+    RE(centre_tth(), docs)
     fake_step_scan_and_move_cen.assert_called_once_with(
-        det=fake_detector, motor=diffractometer().tth, start=-1.0, end=1.0, num=21
+        det=RASOR_DEFAULT_DET,
+        motor=diffractometer().tth,
+        start=-1,
+        end=1,
+        num=21,
+        motor_name=None,
+        det_name=RASOR_DEFAULT_DET_NAME_EXTENSION,
+        loc=PeakPosition.CEN,
     )
 
 
-@patch("i10_bluesky.plans.utils.step_scan_and_move_cen")
-async def test_centre_alpha(
-    fake_step_scan_and_move_cen: Mock, RE: RunEngine, fake_i10, fake_detector
-):
-    sim = RunEngineSimulator()
-    msgs = sim.simulate_plan(centre_alpha(det=fake_detector))
-    msgs = check_msg_set(msgs=msgs, obj=diffractometer().alpha, value=0)
-    msgs = check_mv_wait(msgs=msgs, wait_group=ANY)
+@patch("i10_bluesky.plans.centre_direct_beam.step_scan_and_move_cen")
+async def test_centre_alpha(fake_step_scan_and_move_cen: Mock, RE: RunEngine, fake_i10):
+    RE(centre_alpha())
+
     fake_step_scan_and_move_cen.assert_called_once_with(
-        det=fake_detector, motor=diffractometer().alpha, start=-0.8, end=0.8, num=21
+        det=RASOR_DEFAULT_DET,
+        motor=diffractometer().alpha,
+        start=-0.8,
+        end=0.8,
+        num=21,
+        motor_name=None,
+        det_name=RASOR_DEFAULT_DET_NAME_EXTENSION,
+        loc=PeakPosition.CEN,
     )
 
 
-@patch("i10_bluesky.plans.centre_tth,")
-@patch("i10_bluesky.plans.centre_alpha")
+@patch("i10_bluesky.plans.centre_direct_beam.step_scan_and_move_cen")
 async def test_centre_det_angles(
-    centre_tth: Mock, centre_alpha: Mock, RE: RunEngine, fake_detector
+    fake_step_scan_and_move_cen: Mock,
+    RE: RunEngine,
 ):
-    RE(centre_det_angles(det=fake_detector))
-    centre_tth.assert_called_once()
-    centre_alpha.assert_called_once()
+    RE(centre_det_angles())
+    assert fake_step_scan_and_move_cen.call_args_list[0] == call(
+        det=RASOR_DEFAULT_DET,
+        motor=diffractometer().tth,
+        start=-1,
+        end=1,
+        num=21,
+        motor_name=None,
+        det_name=RASOR_DEFAULT_DET_NAME_EXTENSION,
+        loc=PeakPosition.CEN,
+    )
+    assert fake_step_scan_and_move_cen.call_args_list[1] == call(
+        det=RASOR_DEFAULT_DET,
+        motor=diffractometer().alpha,
+        start=-0.8,
+        end=0.8,
+        num=21,
+        motor_name=None,
+        det_name=RASOR_DEFAULT_DET_NAME_EXTENSION,
+        loc=PeakPosition.CEN,
+    )

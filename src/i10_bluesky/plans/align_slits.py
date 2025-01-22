@@ -4,7 +4,6 @@ from bluesky.plan_stubs import abs_set, mv, wait
 from dodal.beamlines.i10 import (
     det_slits,
     diffractometer,
-    rasor_femto_pa_scaler_det,
     simple_stage,
     slits,
 )
@@ -13,6 +12,10 @@ from dodal.devices.slits import Slits
 from ophyd_async.core import StandardReadable
 
 from i10_bluesky.log import LOGGER
+from i10_bluesky.plans.configuration.default_setting import (
+    RASOR_DEFAULT_DET,
+    RASOR_DEFAULT_DET_NAME_EXTENSION,
+)
 from i10_bluesky.plans.utils import (
     PeakPosition,
     align_slit_with_look_up,
@@ -26,9 +29,6 @@ from i10_bluesky.plans.utils import (
 
 DSD = {"5000": 14.3, "1000": 19.3, "500": 26.5, "100": 29.3, "50": 34.3}
 DSU = {"5000": 16.7, "1000": 21.7, "500": 25.674, "100": 31.7, "50": 36.7}
-
-RASOR_DEFAULT_DET = rasor_femto_pa_scaler_det()
-RASOR_DEFAULT_DET_NAME_EXTENSION = "-current"
 
 
 def move_dsu(
