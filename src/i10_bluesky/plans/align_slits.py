@@ -172,7 +172,7 @@ def align_slit(
     det_name: str | None = None,
     motor_name: str | None = "",
     centre_type: PeakPosition = PeakPosition.COM,
-):
+) -> MsgGenerator:
     """
     Plan to align a pair of standard x-y slits,
     it does a pair of slits scan and go to the centre of mass by default.
@@ -251,7 +251,7 @@ def align_slit(
     yield from wait(group=group_wait)
 
 
-def move_to_direct_beam_position():
+def move_to_direct_beam_position() -> MsgGenerator:
     """Remove everything in the way of the beam"""
     diff = diffractometer()
     s_stage = simple_stage()

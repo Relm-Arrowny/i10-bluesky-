@@ -21,7 +21,7 @@ def centre_tth(
     start: float = -1,
     end: float = 1,
     num: int = 21,
-):
+) -> MsgGenerator:
     """Centre two theta using Rasor dector."""
 
     yield from step_scan_and_move_cen(
@@ -42,7 +42,7 @@ def centre_alpha(
     start: float = -0.8,
     end: float = 0.8,
     num: int = 21,
-):
+) -> MsgGenerator:
     """Centre rasor alpha using Rasor dector."""
     yield from step_scan_and_move_cen(
         det=det,
@@ -59,7 +59,7 @@ def centre_alpha(
 def centre_det_angles(
     det: StandardReadable = RASOR_DEFAULT_DET,
     det_name: str = RASOR_DEFAULT_DET_NAME_EXTENSION,
-):
+) -> MsgGenerator:
     """Centre both two theta and alpha angle on Rasor"""
     yield from centre_tth(det, det_name)
     yield from centre_alpha(det, det_name)
