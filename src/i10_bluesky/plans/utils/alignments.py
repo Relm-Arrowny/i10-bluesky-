@@ -1,5 +1,6 @@
 from collections.abc import Callable
 from enum import Enum
+from functools import wraps
 from typing import TypeVar, cast
 
 from bluesky import preprocessors as bpp
@@ -17,13 +18,12 @@ from i10_bluesky.plans.utils.motions import MotorTable
 
 
 class PeakPosition(tuple, Enum):
-    """
-    Data table to help access the fit data.
-    Com: Centre of mass
-    CEN: Peak position
-    MIN: Minimum value
-    MAX: Maximum value
-    D_: Differential
+    """Data table to help access the fit data.\n
+    Com: Centre of mass\n
+    CEN: Peak position\n
+    MIN: Minimum value\n
+    MAX: Maximum value\n
+    With prefix D: Differential
     """
 
     COM = ("stats", "com")
@@ -41,8 +41,9 @@ TCallable = TypeVar("TCallable", bound=Callable)
 
 def scan_and_move_cen(funcs: TCallable) -> TCallable:
     """Wrapper to add PeakStats call back before performing scan
-    and move to the fitted position after scan"""
+    and move to the fitted position after scan."""
 
+    @wraps(funcs)
     def inner(**kwargs):
         # Add default value if they are None or missing.
         if "motor_name" not in kwargs or kwargs["motor_name"] is None:
@@ -79,25 +80,26 @@ def step_scan_and_move_cen(
     det_name: str | None = None,
     loc: PeakPosition | None = None,
 ) -> MsgGenerator:
-    """Does a step scan and move to the fitted position
-       Parameters
+    """Does a step scan and move to the fitted position.
+
+    Parameters
     ----------
-    det: StandardReadable,
+    det: StandardReadable
         Detector to be use for alignment.
     motor: Motor
         Motor devices that is being centre.
-    start: float,
+    start: float
         Starting position for the scan.
-    end: float,
+    end: float
         Ending position for the scan.
     num:int
         Number of step.
-    motor_name: str | None = None,
+    motor_name: str | None
         Name extension for the motor.
-    det_name: str | None = None,
+    det_name: str | None
         Name extension for the det.
-    loc: PeakPosition | None = None,
-        Which fitted position to move to see PeakPosition
+    loc: PeakPosition | None
+        Which fitted position to move to see PeakPosition.
     """
     LOGGER.info(
         f"Step scanning {motor}{motor_name} with {det}{det_name} pro-scan move to {loc}"
@@ -116,25 +118,26 @@ def fast_scan_and_move_cen(
     loc: PeakPosition | None = None,
     motor_speed: float | None = None,
 ) -> MsgGenerator:
-    """Does a fast non-stopping scan and move to the fitted position
+    """Does a fast non-stopping scan and move to the fitted position.
+
     Parameters
     ----------
-    det: StandardReadable,
-        Detector to be use for alignment.
-    motor: Motor
-        Motor devices that is being centre.
-    start: float,
-        Starting position for the scan.
-    end: float,
-        Ending position for the scan.
-    det_name: str | None = None,
-        Name extension for the det.
-    motor_name: str | None = None,
-        Name extension for the motor.
-    loc: PeakPosition | None = None,
-        Which fitted position to move to see PeakPosition.
-    motor_speed: float | None = None,
-        Speed of the motor.
+     det: StandardReadable,
+         Detector to be use for alignment.
+     motor: Motor
+         Motor devices that is being centre.
+     start: float
+         Starting position for the scan.
+     end: float
+         Ending position for the scan.
+     det_name: str | None = None,
+         Name extension for the det.
+     motor_name: str | None = None,
+         Name extension for the motor.
+     loc: PeakPosition | None = None,
+         Which fitted position to move to see PeakPosition.
+     motor_speed: float | None = None,
+         Speed of the motor.
     """
     LOGGER.info(
         f"Fast scaning {motor}{motor_name} with {det}{det_name} pro-scan move to {loc}"
@@ -167,6 +170,7 @@ def align_slit_with_look_up(
     """Perform a step scan with the the range and starting motor position
       given/calculated by using a look up table(dictionary).
       Move to the peak position after the scan and update the lookup table.
+
     Parameters
     ----------
     motor: Motor

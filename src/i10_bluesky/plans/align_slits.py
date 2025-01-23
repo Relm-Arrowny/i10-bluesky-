@@ -38,6 +38,8 @@ def move_dsu(
     wait: bool = True,
     group: Hashable | None = None,
 ) -> MsgGenerator:
+    """Move up stream detector slit either by it size in slit motor table or by motor
+    position."""
     yield from move_motor_with_look_up(
         slit=det_slits().upstream,
         size=size,
@@ -55,6 +57,8 @@ def move_dsd(
     wait: bool = True,
     group: Hashable | None = None,
 ) -> MsgGenerator:
+    """Move down stream detector slit either by it size in slit motor table or by motor
+    position."""
     yield from move_motor_with_look_up(
         slit=det_slits().downstream,
         size=size,
@@ -68,6 +72,7 @@ def move_dsd(
 def align_dsu(
     size: float, det: StandardReadable | None = None, det_name: str | None = None
 ) -> MsgGenerator:
+    """Align the down stream detector slit"""
     if det is None:
         det, det_name = get_rasor_default_det()
     yield from align_slit_with_look_up(
@@ -83,6 +88,7 @@ def align_dsu(
 def align_dsd(
     size: float, det: StandardReadable | None = None, det_name: str | None = None
 ) -> MsgGenerator:
+    """Align the up stream detector slit"""
     if det is None:
         det, det_name = get_rasor_default_det()
     yield from align_slit_with_look_up(
@@ -96,6 +102,7 @@ def align_dsd(
 
 
 def align_pa_slit(dsd_size: float, dsu_size: float) -> MsgGenerator:
+    """Align both detector slits"""
     yield from move_dsd(5000, wait=True)
     yield from align_dsu(dsu_size)
     yield from align_dsd(dsd_size)

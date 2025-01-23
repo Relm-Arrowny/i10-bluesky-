@@ -25,6 +25,7 @@ def move_motor_with_look_up(
     """Perform a step scan with the the range and starting motor position
       given/calculated by using a look up table(dictionary).
       Move to the peak position after the scan and update the lookup table.
+
     Parameters
     ----------
     motor: Motor
@@ -61,7 +62,7 @@ def set_slit_size(
     wait: bool = True,
     group: Hashable | None = None,
 ) -> MsgGenerator:
-    """Set opening of an x-y slit.
+    """Set opening of x-y slit.
 
     Parameters
     ----------

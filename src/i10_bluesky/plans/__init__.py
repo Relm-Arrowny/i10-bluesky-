@@ -5,8 +5,6 @@ from .centre_direct_beam import (
     centre_tth,
     move_pin_origin,
 )
-
-# from .centre_direct_beam import clear_beam_path
 from .open_beam_path import (
     clear_beam_path,
     direct_beam_polan,
