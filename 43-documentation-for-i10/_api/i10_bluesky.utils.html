@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>i10_bluesky.utils &#8212; i10_bluesky 0.0.0.5.dev44+g2954a4f documentation</title>
+    <title>i10_bluesky.utils &#8212; i10_bluesky 0.0.0.5.dev45+g7bbd36d documentation</title>
   
   
   
@@ -41,7 +41,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../_static/documentation_options.js?v=7cb8b319"></script>
+    <script src="../_static/documentation_options.js?v=8069e280"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -469,6 +469,7 @@
                   
   <section id="module-i10_bluesky.utils">
 <span id="i10-bluesky-utils"></span><h1><code class="docutils literal notranslate"><span class="pre">i10_bluesky.utils</span></code><a class="headerlink" href="#module-i10_bluesky.utils" title="Link to this heading">#</a></h1>
+<p>Plans here more general or less completed.</p>
 <p class="rubric">Members</p>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
 <tbody>
@@ -559,13 +560,13 @@ Move to the peak position after the scan and update the lookup table.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>motor</strong> (<em>Motor</em>) – Motor devices that is being centre.</p></li>
-<li><p><strong>size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a><em>,</em>) – The size/name in the motor_table.</p></li>
+<li><p><strong>size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – The size/name in the motor_table.</p></li>
 <li><p><strong>slit_table</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a><em>]</em><em>,</em>) – Look up table for motor position, the str part should be the size of
 the slit in um.</p></li>
 <li><p><strong>det</strong> (<em>StandardReadable</em><em>,</em>) – Detector to be use for alignment.</p></li>
-<li><p><strong>det_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em> | </em><em>None = None</em><em>,</em>) – Name extension for the det.</p></li>
-<li><p><strong>motor_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em> | </em><em>None = None</em><em>,</em>) – Name extension for the motor.</p></li>
-<li><p><strong>centre_type</strong> (<a class="reference internal" href="#i10_bluesky.utils.PeakPosition" title="i10_bluesky.utils.PeakPosition"><em>PeakPosition</em></a><em> | </em><em>None = None</em><em>,</em>) – Which fitted position to move to see PeakPosition.</p></li>
+<li><p><strong>det_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em> | </em><em>None</em>) – Name extension for the det.</p></li>
+<li><p><strong>motor_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em> | </em><em>None</em>) – Name extension for the motor.</p></li>
+<li><p><strong>centre_type</strong> (<a class="reference internal" href="#i10_bluesky.utils.PeakPosition" title="i10_bluesky.utils.PeakPosition"><em>PeakPosition</em></a><em> | </em><em>None</em>) – Which fitted position to move to see PeakPosition.</p></li>
 </ul>
 </dd>
 </dl>
