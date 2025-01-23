@@ -28,6 +28,10 @@
     "url": "https://DiamondLightSource.github.io/i10-bluesky/40-open-up-slits-and-remove-everything-that-is-in-the-way-of-the-beam-to-detectormove-sample-out-of-the-way-and-pin-to-0-in-sample-stage-x-y-z/"
   },
   {
+    "version": "43-documentation-for-i10",
+    "url": "https://DiamondLightSource.github.io/i10-bluesky/43-documentation-for-i10/"
+  },
+  {
     "version": "Fixes-docs-dead-links",
     "url": "https://DiamondLightSource.github.io/i10-bluesky/Fixes-docs-dead-links/"
   },
