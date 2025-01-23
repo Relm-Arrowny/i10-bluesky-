@@ -30,18 +30,18 @@ def move_motor_with_look_up(
     ----------
     motor: Motor
         Motor devices that is being centre.
-    size: float,
+    size: float
         The size/name in the motor_table.
     slit_table: dict[str, float],
         Look up table for motor position, the str part should be the size of
         the slit in um.
     det: StandardReadable,
         Detector to be use for alignment.
-    det_name: str | None = None,
+    det_name: str | None
         Name extension for the det.
-    motor_name: str | None = None,
+    motor_name: str | None
         Name extension for the motor.
-    centre_type: PeakPosition | None = None,
+    centre_type: PeakPosition | None
         Which fitted position to move to see PeakPosition.
     """
     MotorTable.model_validate(motor_table)

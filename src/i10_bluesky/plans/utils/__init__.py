@@ -1,3 +1,5 @@
+"""Plans here more general or less completed."""
+
 from .alignments import (
     PeakPosition,
     align_slit_with_look_up,
